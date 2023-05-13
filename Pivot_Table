@@ -1,0 +1,64 @@
+Sub CreatePivotTable()
+
+    Dim srcSheet As Worksheet
+    Dim destSheet As Worksheet
+    Dim pivotRange As Range
+    Dim pivotTable As PivotTable
+
+    ' Set the reference to the source sheet (where the data is)
+    Set srcSheet = ThisWorkbook.Sheets("Sheet1")
+    
+    ' Set the reference to the destination sheet (where the pivot table will be created)
+    Set destSheet = ThisWorkbook.Sheets("Sheet2")
+
+    ' Define the data range for the pivot table
+    Set pivotRange = srcSheet.Range("A1").CurrentRegion
+
+    ' Create a new PivotTable in the destination sheet
+    Set pivotTable = ThisWorkbook.PivotTableWizard(SourceType:=xlDatabase, SourceData:=pivotRange, TableDestination:=destSheet.Range("A3"), TableName:="PivotTable1")
+
+    ' Set up the row, column, and data fields
+    With pivotTable
+        .PivotFields("Column1").Orientation = xlRowField
+        .PivotFields("Column2").Orientation = xlColumnField
+        .PivotFields("Column3").Orientation = xlDataField
+    End With
+
+    ' Refresh the PivotTable
+    pivotTable.RefreshTable
+
+    ' Release object references
+    Set pivotTable = Nothing
+    Set pivotRange = Nothing
+    Set destSheet = Nothing
+    Set srcSheet = Nothing
+
+End Sub
+
+
+Sub FilterPivotTable()
+
+    Dim pivotTable As PivotTable
+    Dim pivotField As PivotField
+
+    ' Set the reference to the PivotTable
+    Set pivotTable = ThisWorkbook.Sheets("Sheet2").PivotTables("PivotTable1")
+
+    ' Set the reference to the field to filter
+    Set pivotField = pivotTable.PivotFields("Region")
+
+    ' Clear any existing filters
+    pivotField.ClearAllFilters
+    
+    ' Filter for "East" and "West"
+    pivotField.PivotFilters.Add2 Type:=xlCaptionEquals, Value1:="East"
+    pivotField.PivotFilters.Add2 Type:=xlCaptionEquals, Value1:="West"
+
+    ' Refresh the PivotTable
+    pivotTable.RefreshTable
+
+    ' Release object references
+    Set pivotField = Nothing
+    Set pivotTable = Nothing
+
+End Sub
