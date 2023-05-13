@@ -1,0 +1,40 @@
+Sub OpenAndCopyData()
+
+    Dim srcWorkbook As Workbook
+    Dim destWorkbook As Workbook
+    Dim srcWorksheet As Worksheet
+    Dim destWorksheet As Worksheet
+    Dim filePath As String
+    Dim fileName As String
+    Dim dateStr As String
+
+    ' Get the current date in the yyyy-mm-dd format
+    dateStr = Format(Now(), "yyyy-mm-dd")
+    
+    ' Specify the directory and file name
+    filePath = "path_to_directory\" & dateStr & "\"
+    fileName = "file_name.xlsx"
+
+    ' Set the reference to the destination workbook
+    Set destWorkbook = ThisWorkbook
+
+    ' Open the source workbook
+    Set srcWorkbook = Workbooks.Open(filePath & fileName)
+
+    ' Specify the source and destination sheets
+    Set srcWorksheet = srcWorkbook.Sheets("source_sheet")
+    Set destWorksheet = destWorkbook.Sheets("destination_sheet")
+
+    ' Copy the data from the source sheet to the destination sheet
+    srcWorksheet.Cells.Copy destWorksheet.Cells
+
+    ' Close the source workbook without saving changes
+    srcWorkbook.Close SaveChanges:=False
+
+    ' Release object references
+    Set srcWorksheet = Nothing
+    Set destWorksheet = Nothing
+    Set srcWorkbook = Nothing
+    Set destWorkbook = Nothing
+
+End Sub
