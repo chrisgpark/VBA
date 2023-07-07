@@ -1,0 +1,97 @@
+Sub Input_Sheet_Config()
+
+' Part 1: Delete all sheets except for sheet main
+Application.DisplayAlerts = False
+
+Set workbookMain = ThisWorkbook
+
+    For Each sheetCurrent In workbookMain.Sheets
+
+        If sheetCurrent.Name <> "Main" Then
+
+            sheetCurrent.Delete
+    
+        End If
+
+    Next sheetCurrent
+
+Application.DisplayAlerts = True
+
+' Part 2: Bring in data input sheets
+
+Set workbookMain = ThisWorkbook
+
+With workbookMain.Sheets("Main")
+    
+    dateCurrent = Date
+    dateReport = DateAdd("m", -1, dateCurrent)
+    dateDirectory = Format(dateReport, "yyyy_MM")
+    
+    dirWorkbook = Application.ActiveWorkbook.Path
+    
+    dirInput = dirWorkbook & "\" & dateDirectory
+    
+    .Range("B1") = dateDirectory
+    .Range("A2") = "Input Path"
+    .Range("B2") = dirInput
+    
+' Headings for the data
+
+    .Range("A5") = "Index"
+    
+    .Range("B5") = "Input"
+    
+' This step requires user to enter index on column A
+
+    lastRow = .Cells(.Rows.Count, 1).End(xlUp).Row
+    
+    For Row = 6 To lastRow
+    
+        strWorkbook = .Range("A" & Row) & "_" & dateDirectory
+        
+        strInput = .Range("A" & Row) & "_" & dateDirectory & ".xlsx"
+        
+        strPath = dirInput & "\" & strInput
+        
+        .Range("B" & Row) = strPath
+        
+        Workbooks.Open (strPath)
+        
+        Set sheetSource = Workbooks(strWorkbook & ".xlsx").Sheets(1)
+        
+        sheetSource.Copy after:=workbookMain.Sheets(workbookMain.Sheets.Count)
+        
+        Set sheetCopied = workbookMain.Sheets(workbookMain.Sheets.Count)
+        
+        sheetCopied.Name = .Range("A" & Row)
+        
+    Next Row
+    
+End With
+        
+' Part 3:Add index to data
+
+For Each sheetCurrent In ThisWorkbook.Sheets
+
+    If sheetCurrent.Name <> "Main" Then
+    
+        With sheetCurrent
+            lastRow = .Cells(.Rows.Count, 1).End(xlUp).Row
+            lastCol = .Cells(1, .Columns.Count).End(xlToLeft).Column
+            
+            For col = 1 To lastCol
+            
+                If LCase(.Cells(1, col)) = "index" Then
+                
+                    .Columns(col).Delete
+                    
+                Next Row
+                
+            End With
+            
+        End If
+        
+    Next sheetCurrent
+
+End Sub
+
