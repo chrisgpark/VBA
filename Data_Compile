@@ -1,117 +1,201 @@
-Sub Input_Sheet_Config()
+Sub configure_sheets()
 
+' If an error occurs, skip it and move to the next line
 On Error Resume Next
 
-' Part 1: Delete all sheets except for sheet main
+' Part 1: Delete all sheets except for the "Main" sheet
 
+' Prevent Excel from displaying alerts to the user
 Application.DisplayAlerts = False
 
+' Set workbookMain to refer to the active workbook
 Set workbookMain = ThisWorkbook
 
-    For Each sheetCurrent In workbookMain.Sheets
+' Iterate over all sheets in the workbook
+For Each sheetCurrent In workbookMain.Sheets
 
-        If sheetCurrent.Name <> "Main" Then
+    ' If the sheet's name is not "Main", delete it
+    If sheetCurrent.Name <> "Main" Then
+        sheetCurrent.Delete
+    End If
 
-            sheetCurrent.Delete
-    
-        End If
+Next sheetCurrent
 
-    Next sheetCurrent
-
+' Enable Excel alerts again
 Application.DisplayAlerts = True
 
 ' Part 2: Bring in data input sheets
 
+' Reset workbookMain to refer to the active workbook
 Set workbookMain = ThisWorkbook
 
+' Set the date and the directory for the input data
 With workbookMain.Sheets("Main")
     
+    ' Set the current date and calculate the date for the report
     dateCurrent = Date
-    
     dateReport = DateAdd("m", -1, dateCurrent)
-    
     dateDirectory = Format(dateReport, "yyyy_MM")
     
+    ' Set the workbook directory and input directory
     dirWorkbook = Application.ActiveWorkbook.Path
-    
     dirInput = dirWorkbook & "\" & dateDirectory
     
+    ' Populate the "Main" sheet with the necessary information
     .Range("A1") = "Date"
-    .Range("B1") = dateDirectory ' Automatically populated, create folder under same name in workbook directory
+    .Range("B1") = dateDirectory
     .Range("A2") = "Input Path"
-    .Range("B2") = dirInput ' Automatically populated
+    .Range("B2") = dirInput
     
-' Headings for the data
-
-    .Range("A5") = "Index" ' Column A must be Index name and input file must match
+    ' Set headings for the data
+    .Range("A5") = "Index"
     .Range("B5") = "Input"
     
-' This step requires user to enter index on column A
-
+    ' Iterate over the rows in the "Main" sheet
     lastRow = .Cells(.Rows.Count, 1).End(xlUp).Row
-    
     For Row = 6 To lastRow
-    
         strWorkbook = .Range("A" & Row) & "_" & dateDirectory
-        
         strInput = .Range("A" & Row) & "_" & dateDirectory & ".xlsx"
-        
         strPath = dirInput & "\" & strInput
         
         .Range("B" & Row) = strPath
         
+        ' Open the input workbook and copy its first sheet to the main workbook
         Workbooks.Open (strPath)
-        
         Set sheetSource = Workbooks(strWorkbook & ".xlsx").Sheets(1)
-        
-        sheetSource.Copy after:=workbookMain.Sheets(workbookMain.Sheets.Count)
-        
+        sheetSource.Copy After:=workbookMain.Sheets(workbookMain.Sheets.Count)
         Set sheetCopied = workbookMain.Sheets(workbookMain.Sheets.Count)
         
+        ' Rename the copied sheet
         sheetCopied.Name = .Range("A" & Row)
         
     Next Row
     
 End With
-        
+
 ' Part 3:Add index to data
 
-    For Each sheetCurrent In ThisWorkbook.Sheets
+' Iterate over all sheets in the workbook
+For Each sheetCurrent In ThisWorkbook.Sheets
 
-        If sheetCurrent.Name <> "Main" Then
-        
-            With sheetCurrent
+    ' If the sheet's name is not "Main", add an "Index" column
+    If sheetCurrent.Name <> "Main" Then
+        With sheetCurrent
+            lastRow = .Cells(.Rows.Count, 1).End(xlUp).Row
+            lastCol = .Cells(1, .Columns.Count).End(xlToLeft).Column
             
-                lastRow = .Cells(.Rows.Count, 1).End(xlUp).Row
+            ' Iterate over all columns in the sheet
+            For col = 1 To lastCol
                 
-                lastCol = .Cells(1, .Columns.Count).End(xlToLeft).Column
-                
-                For col = 1 To lastCol
-                
-                    If LCase(.Cells(1, col)) = "index" Then
-                    
-                        .Columns(col).Delete
+                ' If a column is named "index", delete it
+                If LCase(.Cells(1, col)) = "index" Then
+                    .Columns(col).Delete
+                End If
                         
-                    End If
-                        
-                Next col
-                
-                lastCol = .Cells(1, .Columns.Count).End(xlToLeft).Column
-                
-                .Cells(1, lastCol + 1) = "Index"
-                
-                For Row = 2 To lastRow
-                
-                    .Cells(Row, lastCol + 1) = sheetCurrent.Name
-                
-                Next Row
+            Next col
+            
+            ' Add a new "Index" column at the end
+            lastCol = .Cells(1, .Columns.Count).End(xlToLeft).Column
+            .Cells(1, lastCol + 1) = "Index"
+            
+            ' Populate the "Index" column with the sheet's name
+            For Row = 2 To lastRow
+                .Cells(Row, lastCol + 1) = sheetCurrent.Name
+            Next Row
                     
-            End With
+        End With
                 
-        End If
+    End If
         
-    Next sheetCurrent
+Next sheetCurrent
     
+' If an error occurs after this point, don't skip it
 On Error GoTo 0
 
+End Sub
+
+
+
+Sub combine_sheets()
+    
+    ' Declare variable to represent each worksheet
+    Dim ws As Worksheet
+
+    ' If an error occurs, skip it and move to the next line
+    On Error Resume Next
+
+    ' Prevent Excel from displaying alerts to the user
+    Application.DisplayAlerts = False
+
+    ' Attempt to delete the "data" worksheet, if it exists
+    ThisWorkbook.Sheets("data").Delete
+
+    ' If an error occurs after this point, don't skip it
+    On Error GoTo 0
+
+    ' Create a new worksheet named "data" at the end of the workbook
+    Set sheetData = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    sheetData.Name = "data"
+
+    ' Set up the headers for the combined data
+    sheetData.Range("a1") = "Date"
+    sheetData.Range("b1") = "Actual"
+    sheetData.Range("c1") = "Index"
+
+    ' Iterate over all worksheets in the workbook
+    For Each ws In ThisWorkbook.Sheets
+
+        ' If the worksheet's name is neither "main" nor "data" (case-insensitive)
+        If LCase(ws.Name) <> "main" And LCase(ws.Name) <> "data" Then
+
+            ' Find the last row with data on the "data" worksheet
+            lrData = sheetData.Cells(sheetData.Rows.Count, 1).End(xlUp).Row
+
+            ' Find the last row and column with data on the current worksheet
+            lrWs = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+            lcWs = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+
+            ' Iterate over all columns on the current worksheet
+            For col = 1 To lcWs
+
+                ' If the first cell of the column is "date" (case-insensitive)
+                If LCase(ws.Cells(1, col)) = "date" Then
+
+                    ' Remember the column number for "date"
+                    colDate = col
+
+                    ' Copy all data (except for the header) from the "date" column
+                    ws.Range(ws.Cells(2, colDate), ws.Cells(lrWs, colDate)).Copy
+
+                    ' Paste the copied data into the "date" column on the "data" worksheet
+                    sheetData.Range("A" & lrData + 1).PasteSpecial Paste:=xlPasteValues
+
+                ' Similar actions for "actual" column
+                ElseIf LCase(ws.Cells(1, col)) = "actual" Then
+
+                    colActual = col
+                    ws.Range(ws.Cells(2, colActual), ws.Cells(lrWs, colActual)).Copy
+                    sheetData.Range("B" & lrData + 1).PasteSpecial Paste:=xlPasteValues
+
+                ' Similar actions for "index" column
+                ElseIf LCase(ws.Cells(1, col)) = "index" Then
+
+                    colIndex = col
+                    ws.Range(ws.Cells(2, colIndex), ws.Cells(lrWs, colIndex)).Copy
+                    sheetData.Range("C" & lrData + 1).PasteSpecial Paste:=xlPasteValues
+
+                End If
+
+            ' Move to the next column
+            Next col
+
+        End If
+
+    ' Move to the next worksheet
+    Next ws
+    
+    '
+    sheetData.Range("A:A").NumberFormat = "m/d/yyyy"
+
+' End of the subroutine
 End Sub
