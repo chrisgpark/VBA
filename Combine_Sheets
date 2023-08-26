@@ -1,0 +1,81 @@
+Sub Collect_Sheets()
+
+' BEFORE RUNNING: macro workbook must have a sheet named 'control' and another sheet named 'data'
+
+    Dim mainWs As Worksheet
+    Dim sourceWb As Workbook
+    Dim sourceWs As Worksheet
+    Dim LastRow As Long
+    Dim LastColumn As Long
+    Dim LastRowMain As Long
+    Dim fileName As String
+    Dim folderPath As String
+    Dim controlWs As Worksheet
+    
+    ' folder path is relative to macro file path
+    folderPath = ThisWorkbook.Path & "\"
+
+    ' workbook and worksheet where data will be pasted
+    Set mainWs = ThisWorkbook.Sheets("data")
+    
+    ' workbook and worksheet where log will be written
+    Set controlWs = ThisWorkbook.Sheets("control")
+    
+    ' adding column headers for control ws
+    controlWs.Range("A1").Value = "Workbook"
+    
+    controlWs.Range("B1").Value = "Sheet"
+    
+    controlWs.Range("C1").Value = "Col Count"
+    
+    controlWs.Range("D1").Value = "Row Count"
+    
+    ' looping through all xlsx files in the folder
+    fileName = Dir(folderPath & "*.xlsx")
+
+    Do While fileName <> ""
+        
+        ' open an xlsx file in the folder
+        Set sourceWb = Workbooks.Open(folderPath & fileName)
+
+        ' looping through each worksheet in the xlsx file
+        For Each sourceWs In sourceWb.Sheets
+        
+            ' last row of the source sheet
+            LastRow = sourceWs.Cells(sourceWs.Rows.Count, "A").End(xlUp).Row
+            
+            ' last col of the source sheet
+            LastColumn = sourceWs.Cells(1, sourceWs.Columns.Count).End(xlToLeft).Column
+
+            ' first empty row of data sheet
+            LastRowMain = mainWs.Cells(mainWs.Rows.Count, "A").End(xlUp).Row + 1
+
+            ' copy and paste row 2 through last row of source sheet and paste to main ws
+            sourceWs.Range(sourceWs.Cells(2, 1), sourceWs.Cells(LastRow, LastColumn)).Copy mainWs.Range("A" & LastRowMain)
+            
+            ' first empty row of control sheet
+            LastRowControl = controlWs.Cells(controlWs.Rows.Count, "A").End(xlUp).Row + 1
+            
+            ' log workbook name
+            controlWs.Range("A" & LastRowControl).Value = sourceWb.Name
+            
+            ' log sheet name
+            controlWs.Range("B" & LastRowControl).Value = sourceWs.Name
+            
+            ' log column count
+            controlWs.Range("C" & LastRowControl).Value = LastColumn
+            
+            ' log row count
+            controlWs.Range("D" & LastRowControl).Value = LastRow - 1
+
+        Next sourceWs
+
+        ' close source workbook
+        sourceWb.Close SaveChanges:=False
+
+        ' grab next file
+        fileName = Dir
+        
+    Loop
+
+End Sub
