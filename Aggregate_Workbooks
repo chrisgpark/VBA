@@ -1,6 +1,14 @@
-Sub Collect_Sheets()
+' This program aggregates data from all Excel files in a specific folder (excluding the header row) 
+' and pastes them into a "data" worksheet in the main workbook. Simultaneously, it logs details of 
+' each data source in a "control" worksheet.
 
-' BEFORE RUNNING: macro workbook must have a sheet named 'control' and another sheet named 'data'
+' BEFORE RUNNING THE PROGRAM:
+' 1) The macro-enabled workbook should have worksheets named 'data' and 'control'
+' 2) The folder path for the macro-enabled workbook should only contain .xlsx files
+'    the user wishes to aggregate.
+
+
+Sub Collect_Sheets()
 
     Dim mainWs As Worksheet
     Dim sourceWb As Workbook
