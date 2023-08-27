@@ -1,64 +1,73 @@
-Sub CreatePivotTable()
+Sub Generate_Pivot_Table()
 
-    Dim srcSheet As Worksheet
-    Dim destSheet As Worksheet
-    Dim pivotRange As Range
-    Dim pivotTable As PivotTable
-
-    ' Set the reference to the source sheet (where the data is)
-    Set srcSheet = ThisWorkbook.Sheets("Sheet1")
+    Dim PSheet As Worksheet
+    Dim DSheet As Worksheet
+    Dim PCache As PivotCache
+    Dim PTable As PivotTable
+    Dim PRange As Range
+    Dim LastRow As Long
+    Dim LastCol As Long
+    Dim RowHeader As String
+    Dim ColumnHeader As String
+    Dim CalculateField As String
     
-    ' Set the reference to the destination sheet (where the pivot table will be created)
-    Set destSheet = ThisWorkbook.Sheets("Sheet2")
+    ' insert new worksheet
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    Worksheets("Pivot").Delete
+    Sheets.Add Before:=ActiveSheet
+    ActiveSheet.Name = "Pivot"
+    Application.DisplayAlerts = True
+    Set PSheet = Worksheets("Pivot")
+    Set DSheet = Worksheets("Data")
+    
+' data range
+    LastRow = DSheet.Cells(Rows.Count, 1).End(xlUp).Row
+    LastCol = DSheet.Cells(1, Columns.Count).End(xlToLeft).Column
+    Set PRange = DSheet.Cells(1, 1).Resize(LastRow, LastCol)
+    
+    PivotTableName = "Pivot_Table_01"
+    
+' pivot cache
+    Set PCache = ActiveWorkbook.PivotCaches.Create _
+    (SourceType:=xlDatabase, SourceData:=PRange). _
+    CreatePivotTable(TableDestination:=PSheet.Cells(2, 2), _
+    TableName:=PivotTableName)
 
-    ' Define the data range for the pivot table
-    Set pivotRange = srcSheet.Range("A1").CurrentRegion
+' blank pivot table
+    Set PTable = PCache.CreatePivotTable _
+    (TableDestination:=PSheet.Cells(1, 1), TableName:=PivotTableName)
+    
+' row fields
+    
+    RowHeader = "Sector"
 
-    ' Create a new PivotTable in the destination sheet
-    Set pivotTable = ThisWorkbook.PivotTableWizard(SourceType:=xlDatabase, SourceData:=pivotRange, TableDestination:=destSheet.Range("A3"), TableName:="PivotTable1")
-
-    ' Set up the row, column, and data fields
-    With pivotTable
-        .PivotFields("Column1").Orientation = xlRowField
-        .PivotFields("Column2").Orientation = xlColumnField
-        .PivotFields("Column3").Orientation = xlDataField
+    With ActiveSheet.PivotTables(PivotTableName).PivotFields(RowHeader)
+        .Orientation = xlRowField
+        .Position = 1
     End With
 
-    ' Refresh the PivotTable
-    pivotTable.RefreshTable
-
-    ' Release object references
-    Set pivotTable = Nothing
-    Set pivotRange = Nothing
-    Set destSheet = Nothing
-    Set srcSheet = Nothing
-
-End Sub
-
-
-Sub FilterPivotTable()
-
-    Dim pivotTable As PivotTable
-    Dim pivotField As PivotField
-
-    ' Set the reference to the PivotTable
-    Set pivotTable = ThisWorkbook.Sheets("Sheet2").PivotTables("PivotTable1")
-
-    ' Set the reference to the field to filter
-    Set pivotField = pivotTable.PivotFields("Region")
-
-    ' Clear any existing filters
-    pivotField.ClearAllFilters
+' column fields
     
-    ' Filter for "East" and "West"
-    pivotField.PivotFilters.Add2 Type:=xlCaptionEquals, Value1:="East"
-    pivotField.PivotFilters.Add2 Type:=xlCaptionEquals, Value1:="West"
-
-    ' Refresh the PivotTable
-    pivotTable.RefreshTable
-
-    ' Release object references
-    Set pivotField = Nothing
-    Set pivotTable = Nothing
+'     ColumnHeader = ""
+'
+'     With ActiveSheet.PivotTables(PivotTableName).PivotFields(ColumnHeader)
+'         .Orientation = xlColumnField
+'         .Position = 1
+'     End With
+    
+' data fields
+    CalculateField = "Full Time Employees"
+    
+    With ActiveSheet.PivotTables(PivotTableName).PivotFields(CalculateField)
+        .Orientation = xlDataField
+        .Function = xlAverage
+        .NumberFormat = "#,##0"
+        .Name = CalculateField
+    End With
+    
+' format pivot table
+     ActiveSheet.PivotTables(PivotTableName).ShowTableStyleRowStripes = True
+     ActiveSheet.PivotTables(PivotTableName).TableStyle2 = "PivotStyleMedium7"
 
 End Sub
